@@ -20,7 +20,7 @@ func init() {
 }
 
 func newParseMessage(c *common.Config) (processors.Processor, error) {
-	regex, err := regexp.Compile("(?P<timedate>^\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{1,2}:\\d{1,2}(\\.\\d+)*)\\s+(?P<log_level>[Aa]lert|ALERT|[Tt]race|TRACE|[Dd]ebug|DEBUG|[Nn]otice|NOTICE|[Ii]nfo|INFO|[Ww]arn(?:ing)?|WARN(?:ING)?|[Ee]rr(?:or)?|ERR(?:OR)?|[Cc]rit(?:ical)?|CRIT(?:ICAL)?|[Ff]atal|FATAL|[Ss]evere|SEVERE|[Ee]merg(?:ency)?|EMERG(?:ENCY))\\s+\\[(?P<ext_info>.*?)\\](?P<content>.*?$)")
+	regex, err := regexp.Compile("(?P<timedate>^\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{1,2}:\\d{1,2}(\\.\\d+)*)\\s+(?P<log_level>[Aa]lert|ALERT|[Tt]race|TRACE|[Dd]ebug|DEBUG|[Nn]otice|NOTICE|[Ii]nfo|INFO|[Ww]arn(?:ing)?|WARN(?:ING)?|[Ee]rr(?:or)?|ERR(?:OR)?|[Cc]rit(?:ical)?|CRIT(?:ICAL)?|[Ff]atal|FATAL|[Ss]evere|SEVERE|[Ee]merg(?:ency)?|EMERG(?:ENCY))\\s+\\[(?P<ext_info>.*?)\\](?P<content>[\\s\\S]*$)")
 	if err != nil {
 		return nil, errors.Wrap(err, "parse failed")
 	}
