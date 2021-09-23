@@ -1,4 +1,4 @@
-FROM golang:1.15.11 AS build
+FROM registry.erda.cloud/retag/golang:1.15.11 AS build
 
 ENV GOPROXY="https://goproxy.cn"
 ENV GO111MODULE="on"
