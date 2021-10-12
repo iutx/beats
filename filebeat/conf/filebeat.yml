@@ -40,7 +40,7 @@ processors:
       job_id_key: ${OUTPUT_TERMINUS_JOB_ID_KEY:TERMINUS_DEFINE_TAG}
       output_collector_key: ${ADD_TERMINUS_METADATA_OUTPUT_COLLECTOR_KEY:"MONITOR_LOG_COLLECTOR"}
       default_tags: ${FILEBEAT_DEFAULT_ENV_TAGS:"DICE_CLUSTER_NAME"}
-      tag_keys: ${OUTPUT_TERMINUS_TAG_KEYS:"TERMINUS_DEFINE_TAG,TERMINUS_KEY,MESOS_TASK_ID,DICE_ORG_ID,DICE_ORG_NAME,DICE_PROJECT_ID,DICE_PROJECT_NAME,DICE_APPLICATION_ID,DICE_APPLICATION_NAME,DICE_RUNTIME_ID,DICE_RUNTIME_NAME,DICE_SERVICE_NAME,DICE_WORKSPACE,DICE_COMPONENT,TERMINUS_LOG_KEY,MONITOR_LOG_KEY,DICE_CLUSTER_NAME,MSP_ENV_ID,MSP_LOG_ATTACH,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.container.name"}
+      tag_keys: ${OUTPUT_TERMINUS_TAG_KEYS:"POD_IP,TERMINUS_DEFINE_TAG,TERMINUS_KEY,MESOS_TASK_ID,DICE_ORG_ID,DICE_ORG_NAME,DICE_PROJECT_ID,DICE_PROJECT_NAME,DICE_APPLICATION_ID,DICE_APPLICATION_NAME,DICE_RUNTIME_ID,DICE_RUNTIME_NAME,DICE_SERVICE_NAME,DICE_WORKSPACE,DICE_COMPONENT,TERMINUS_LOG_KEY,MONITOR_LOG_KEY,DICE_CLUSTER_NAME,MSP_ENV_ID,MSP_LOG_ATTACH,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.container.name"}
       label_keys: ${ADD_TERMINUS_METADATA_LABEL_KEYS:"MONITOR_LOG_OUTPUT,MONITOR_LOG_OUTPUT_CONFIG"}
       enable_log_output: ${ENABLE_LOG_OUTPUT:true}
   - parse_message:
@@ -51,7 +51,36 @@ processors:
       fields: ["input.type.kube_audit"]
       file_name: ${PARSE_KUBE_APISERVER_AUDIT_FILE_NAME:"kube-audit.log"}
       cluster_key: ${PARSE_KUBE_APISERVER_AUDIT_CLUSTER_KEY:"DICE_CLUSTER_NAME"}
-
+  - copy_fields:
+      fail_on_error: false
+      ignore_missing: true
+      fields:
+        - from: terminus.tags.request-id
+          to: terminus.tags.trace_id
+        - from: terminus.tags.DICE_ORG_ID
+          to: terminus.tags.ORG_ID
+        - from: terminus.tags.DICE_ORG_NAME
+          to: terminus.tags.ORG_NAME
+        - from: terminus.tags.DICE_PROJECT_ID
+          to: terminus.tags.PROJECT_ID
+        - from: terminus.tags.DICE_PROJECT_NAME
+          to: terminus.tags.PROJECT_NAME
+        - from: terminus.tags.DICE_APPLICATION_ID
+          to: terminus.tags.APPLICATION_ID
+        - from: terminus.tags.DICE_APPLICATION_NAME
+          to: terminus.tags.APPLICATION_NAME
+        - from: terminus.tags.DICE_RUNTIME_ID
+          to: terminus.tags.RUNTIME_ID
+        - from: terminus.tags.DICE_RUNTIME_NAME
+          to: terminus.tags.RUNTIME_NAME
+        - from: terminus.tags.DICE_SERVICE_NAME
+          to: terminus.tags.SERVICE_NAME
+        - from: terminus.tags.DICE_WORKSPACE
+          to: terminus.tags.WORKSPACE
+        - from: terminus.tags.DICE_COMPONENT
+          to: terminus.tags.COMPONENT
+        - from: terminus.tags.DICE_CLUSTER_NAME
+          to: terminus.tags.CLUSTER_NAME
 output.collector:
   hosts: ${OUTPUT_TERMINUS_HOSTS:http://collector.default.svc.cluster.local:7076}
   worker: 1

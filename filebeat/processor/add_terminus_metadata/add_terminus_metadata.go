@@ -234,6 +234,7 @@ func (d *addDockerMetadata) Run(event *beat.Event) (*beat.Event, error) {
 	}
 	meta := common.MapStr{}
 
+	tags["container_id"] = container.ID
 	if jobID == "" {
 		meta.Put("terminus.source", "container")
 		meta.Put("terminus.id", container.ID)
