@@ -44,11 +44,11 @@ processors:
       label_keys: ${ADD_TERMINUS_METADATA_LABEL_KEYS:"MONITOR_LOG_OUTPUT,MONITOR_LOG_OUTPUT_CONFIG"}
       enable_log_output: ${ENABLE_LOG_OUTPUT:true}
   - parse_message:
-      fields: ["input.type.container"]
-#  - parse_kafka_connector:
-#      fields: ["input.type.kafka"]
+      fields: [ "input.type.container" ]
+  #  - parse_kafka_connector:
+  #      fields: ["input.type.kafka"]
   - parse_kube_apiserver_audit:
-      fields: ["input.type.kube_audit"]
+      fields: [ "input.type.kube_audit" ]
       file_name: ${PARSE_KUBE_APISERVER_AUDIT_FILE_NAME:"kube-audit.log"}
       cluster_key: ${PARSE_KUBE_APISERVER_AUDIT_CLUSTER_KEY:"DICE_CLUSTER_NAME"}
   - copy_fields:
@@ -84,10 +84,14 @@ processors:
 output.collector:
   hosts: ${OUTPUT_TERMINUS_HOSTS:http://collector.default.svc.cluster.local:7076}
   worker: 1
-  job_path: ${OUTPUT_TERMINUS_JOB_PATH:/collect/logs/job}
-  container_path: ${OUTPUT_TERMINUS_CONTAINER_PATH:/collect/logs/container}
-  auth_username: ${COLLECTOR_AUTH_USERNAME:}
-  auth_password: ${COLLECTOR_AUTH_PASSWORD:}
+  job_path: ${OUTPUT_TERMINUS_JOB_PATH:/api/v1/collect/logs/job}
+  container_path: ${OUTPUT_TERMINUS_CONTAINER_PATH:/api/v1/collect/logs/container}
+  cluster_key: ${DICE_CLUSTER_NAME:}
+  auth:
+    # support basic and key
+    type: ${COLLECTOR_AUTH_TYPE:key}
+    property:
+      filebeat_access_key: ${CLUSTER_ACCESS_KEY:}
   params:
   headers:
   method: ${OUTPUT_TERMINUS_METHOD:POST}

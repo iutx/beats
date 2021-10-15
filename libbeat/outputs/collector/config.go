@@ -6,13 +6,20 @@ import (
 	"github.com/elastic/beats/v7/libbeat/common/transport/tlscommon"
 )
 
+const (
+	authTypeKey      = "key"
+	authTypeBasic    = "basic"
+	authCfgUserName  = "username"
+	authCfgPassword  = "password"
+	authCfgAccessKey = "filebeat_access_key"
+	erdaClusterKey   = "X-Erda-Cluster-Key"
+)
+
 type config struct {
 	JobPath            string            `config:"job_path"`
 	ContainerPath      string            `config:"container_path"`
 	Params             map[string]string `config:"params"`
 	Headers            map[string]string `config:"headers"`
-	AuthUsername       string            `config:"auth_username"`
-	AuthPassword       string            `config:"auth_password"`
 	Method             string            `config:"method"`
 	TLS                *tlscommon.Config `config:"ssl"`
 	KeepAlive          time.Duration     `config:"keep_alive"`
@@ -25,7 +32,9 @@ type config struct {
 	Limiter            limiterConfig     `config:"limiter"`
 	BodyBytesPerSecond int               `config:"body_bytes_per_second"`
 	BodyMaxBytes       int               `config:"body_max_bytes"`
-	Output outputConfig `config:"output"`
+	Output             outputConfig      `config:"output"`
+	Auth               authConfig        `config:"auth"`
+	ClusterKey         string            `config:"cluster_key"`
 }
 
 type outputConfig struct {
@@ -36,6 +45,11 @@ type outputConfig struct {
 	KeepAlive     time.Duration     `config:"keep_alive"`
 	Timeout       time.Duration     `config:"timeout"`
 	CompressLevel int               `config:"compress_level" validate:"min=0, max=9"`
+}
+
+type authConfig struct {
+	Type     string            `config:"type"`
+	Property map[string]string `config:"property"`
 }
 
 type backoff struct {
@@ -50,8 +64,8 @@ type limiterConfig struct {
 }
 
 var defaultConfig = config{
-	JobPath:       "/collect/logs/job",
-	ContainerPath: "/collect/logs/container",
+	JobPath:       "/api/v1/collect/logs/job",
+	ContainerPath: "/api/v1/collect/logs/container",
 	Method:        "POST",
 	KeepAlive:     30 * time.Second,
 	Timeout:       60 * time.Second,

@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	netUrl "net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/elastic/beats/v7/libbeat/common/transport"
@@ -20,6 +22,11 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	clusterCredentialToken string
+	lock                   sync.Mutex
+)
+
 type client struct {
 	enc encoder
 
@@ -29,6 +36,9 @@ type client struct {
 	client       *http.Client
 	jobReq       *http.Request
 	containerReq *http.Request
+
+	authCfg    *authConfig
+	clusterKey string
 
 	outputCompressLevel int
 	outputClient        *http.Client
@@ -65,11 +75,6 @@ func newClient(host string, cfg config, observer outputs.Observer) (*client, err
 	}
 	enc.addHeader(&containerReq.Header)
 
-	if cfg.AuthUsername != "" || cfg.AuthPassword != "" {
-		jobReq.SetBasicAuth(cfg.AuthUsername, cfg.AuthPassword)
-		containerReq.SetBasicAuth(cfg.AuthUsername, cfg.AuthPassword)
-	}
-
 	tls, err := tlscommon.LoadTLSConfig(cfg.TLS)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to load tls")
@@ -96,6 +101,8 @@ func newClient(host string, cfg config, observer outputs.Observer) (*client, err
 		client:              httpClient,
 		jobReq:              jobReq,
 		containerReq:        containerReq,
+		authCfg:             &cfg.Auth,
+		clusterKey:          cfg.ClusterKey,
 		outputCompressLevel: cfg.Output.CompressLevel,
 		outputClient:        outputClient,
 		outputMethod:        cfg.Output.Method,
@@ -230,6 +237,8 @@ func (c *client) sendEvents(events []publisher.Event, isJob bool) ([]publisher.E
 	req.Header.Set("terminus-request-id", requestID)
 	req.Body = ioutil.NopCloser(body)
 
+	c.auth(req)
+
 	// block until ok
 	r := c.lmtr.ReserveN(time.Now(), body.Len())
 	if !r.OK() {
@@ -337,6 +346,16 @@ func (c *client) splitEvents(events []publisher.Event) (jobs, containers []publi
 	return
 }
 
+func (c *client) auth(req *http.Request) {
+	switch c.authCfg.Type {
+	case authTypeKey:
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", readToken()))
+		req.Header.Set(erdaClusterKey, c.clusterKey)
+	case authTypeBasic:
+		req.SetBasicAuth(c.authCfg.Property[authCfgUserName], c.authCfg.Property[authCfgPassword])
+	}
+}
+
 func closeResponseBody(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
 		logp.Warn("fail to close response body. err: %s", err)
@@ -345,4 +364,18 @@ func closeResponseBody(body io.ReadCloser) {
 
 func (c *client) String() string {
 	return selector
+}
+
+func readToken() string {
+	return clusterCredentialToken
+}
+
+func setToken(token []byte) {
+	lock.Lock()
+	defer lock.Unlock()
+	if len(token) == 0 {
+		return
+	}
+
+	clusterCredentialToken = strings.Replace(string(token), "\n", "", -1)
 }
